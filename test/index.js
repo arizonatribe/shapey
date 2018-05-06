@@ -25,5 +25,10 @@ test('"shape" blends an object with a copy of itself transformed according to a 
             jims: ['morrison, jim', 'hendrix, jimmi', 'carter, jimmy']
         }
     )
+    t.deepEqual(
+        shape({morrison: 'Van'}, specResult),
+        {...specResult, morrison: 'Van'},
+        'can overwrite an existing prop with a hard-coded value'
+    )
     t.end()
 })
