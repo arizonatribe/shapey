@@ -1,6 +1,32 @@
+/* eslint max-len: "off" */
 import test from 'tape'
-import {__, concat, compose, map, head, join, length, pipe, toPairs, filter, test as regTest, sum} from 'ramda'
-import shape, {shapeStrictly, shapeLoosely, shapeline} from '../lib'
+import {
+    __,
+    concat,
+    compose,
+    evolve,
+    map,
+    head,
+    is,
+    join,
+    length,
+    merge,
+    pick,
+    pipe,
+    prop,
+    toPairs,
+    filter,
+    sum,
+    test as regTest,
+    toString,
+    toUpper,
+    trim,
+    update,
+    values,
+    when
+} from 'ramda'
+
+import shape, {combine, mergeSpec, shapeStrictly, shapeLoosely, shapeline} from '../lib'
     
 const spec = {
     hendrix: concat(__, 'mi'),
@@ -81,5 +107,108 @@ test('"shapeline" applies a list of functions (in sequence) to a single input', 
         s => (s.sum / (s.count || 1))
     ]
     t.deepEqual(shapeline(transforms, numbers), 150)
+    t.end()
+})
+
+test('"shapeline" is ideal for an array of specs to be turned into a shapey function pipeline', (t) => {
+    const numbers = [3, 4, 9, -3, 82, 274, 1334, 3, 13, 14, 47, 20]
+    const transforms = [{
+        numbers: nums => nums,
+        count: nums => nums.length,
+        sum: nums => nums.reduce((tot, num) => tot + num, 0)
+    }, {
+        type: 'AVERAGE',
+        average: s => s.sum / (s.count || 1)
+    }]
+    t.deepEqual(shapeline(transforms, numbers), {
+        type: 'AVERAGE',
+        numbers,
+        count: 12,
+        sum: 1800,
+        average: 150
+    })
+    t.deepEqual(
+        shapeline(
+            update(1, merge(transforms[1], {shapeyMode: 'strict'}))(transforms),
+            numbers
+        ),
+        {type: 'AVERAGE', average: 150},
+        'Optionally can use strict mode in the shapeline'
+    )
+    t.end()
+})
+
+test('"combine" will join, summarize, or merge two values together', (t) => {
+    t.equal(combine(1, 2), 3, 'Numeric combination')
+    t.equal(combine('foo', 'bar'), 'foobar', 'String combination')
+    t.deepEqual(
+        combine([1, 2, 3], [4, 5, 6]),
+        [1, 2, 3, 4, 5, 6],
+        'Array combination'
+    )
+    t.deepEqual(
+        combine({lorem: 'ipsum'}, {dolor: 'sit'}),
+        {lorem: 'ipsum', dolor: 'sit'},
+        'Object combination'
+    )
+    t.end()
+})
+
+test('"combine" will return the first value when the other value is a different type OR if it makes no sense to combine them', (t) => {
+    t.equal(combine(2, 'two'), 2, 'Number and a String?')
+    t.equal(combine('two', 2), 'two', 'String and a Number?')
+    t.equal(combine(true, false), true, 'Boolean combination?')
+    t.equal(combine(false, true), false, 'Boolean combination?')
+    t.equal(combine(false, {}), false, 'Boolean and Object?')
+    t.deepEqual(combine({}, false), {}, 'Object and Boolean?')
+    t.deepEqual(combine([1, 2, 3], {}), [1, 2, 3], 'Array and Object?')
+    t.deepEqual(combine({a: 'b'}, [1, 2, 3]), {a: 'b'}, 'Object and Array?')
+    t.equal(combine(null, null), null, 'Null')
+    t.equal(combine(undefined, null), undefined, 'undefined')
+    t.equal(combine(null, undefined), null, 'undefined')
+    t.end()
+})
+
+test('"mergeSpec" blends an object with a copy of itself transformed according to a spec', (t) => {
+    t.deepEqual(
+        mergeSpec({
+            morrison: prop('morrison'),
+            hendrix: pipe(prop('hendrix'), concat(__, 'mi')),
+            carter: pipe(prop('carter'), concat(__, 'my'))
+        }, inputObj),
+        specResult
+    )
+    t.end()
+})
+
+test('"mergeSpec" merges new props onto the original object', (t) => {
+    t.deepEqual(mergeSpec({
+      fullName: compose(join(' '), values, pick(['firstName', 'lastName'])),
+      address: pipe(prop('address'), evolve({
+        street: trim,
+        city: compose(str => str.replace(/(?:^|\s)\S/g, toUpper), trim),
+        state: toUpper,
+        zip: compose(trim, when(is(Number), toString))
+      }))
+    }, {
+      firstName: 'Montgomery',
+      lastName: 'Burns',
+      address: {
+        street: '1000 Mammon Lane, ',
+        city: 'springfield',
+        state: 'or',
+        zip: 97403
+      }
+    }), {
+      firstName: 'Montgomery',
+      lastName: 'Burns',
+      address: {
+        street: '1000 Mammon Lane,',
+        city: 'Springfield',
+        state: 'OR',
+        zip: '97403'
+      },
+      fullName: 'Montgomery Burns'
+    })
     t.end()
 })

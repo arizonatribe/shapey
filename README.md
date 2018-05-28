@@ -8,7 +8,7 @@ A light, intuitve syntax for re-shaping objects in JavaScript, inspired by [Ramd
 npm install --save shapey
 ```
 
-### Default Usage
+### Default Usage (Loose Shaping)
 
 In its default mode, shapey will "loosely" shape an input object. This means the spec shape you provide will merge over the input object.
 
@@ -48,7 +48,7 @@ jimmify(jimput)
 
 ```
 
-### Explanation
+#### Explanation
 
 To clarify what is happening in that code example:
 
@@ -101,3 +101,78 @@ jimsWhoRock(manyJims)
 ```
 
 The difference between strict and loose shaping is _only_ the fields in your spec object will appear on the the final output. In loose mode however, all the shaped fields are merged on top of the original input.
+
+### Shapeline
+
+There is another way to use shaping functions and it is to create a pipeline of them. In this approach you create a list of input functions to be executed in order, transforming the input value and sending that new value as input to the next shaping function.
+
+```
+import {shapeline} from 'shapey'
+
+const numbers = [3, 4, 9, -3, 82, 274, 1334, 3, 13, 14, 47, 20]
+const transforms = [{
+    numbers: nums => nums,
+    count: nums => nums.length,
+    sum: nums => nums.reduce((tot, num) => tot + num, 0)
+}, {
+    type: 'AVERAGE',
+    average: ({sum, count}) => sum / (count || 1)
+}]
+
+shapeline(transforms)(numbers)
+
+// {
+// type: 'AVERAGE',
+// numbers: [3, 4, 9, -3, 82, 274, 1334, 3, 13, 14, 47, 20],
+// count: 12,
+// sum: 1800,
+// average: 150
+// }
+```
+
+The list of transform functions to provide can be shapey spec objects or just plain functions that take a value and return a new one. Any shapey spec objec in that list will be turned into a shaping function prior to starting the pipeline.
+
+#### Strict Shaping in the Shapeline
+
+Although the default behvior - when one of the specs in the transforms list is a spec (object) - is to make a `shapeLoosely()` function, you can specify a different shaping mode by setting a prop on the spec called `shapeyMode` to a value of "strict" (case insensitive). This is per spec, and if there are ever any new modes besides "loose" and "strict", this prop will be how you control which to use.
+
+### Combine
+
+A simple curried util function that combines two values of the same type (when it makes sense to combine them)
+
+* Numbers are added together
+* Strings or Arrays are concatenated
+* Objects are merged (second object is merged onto the first)
+
+When the two values are _not_ of the same type (or not among those rules mentioned above), just the first values is returned instead of attempting to combine anything.
+
+```
+import {combine} from 'shapey'
+
+combine(1, 3)
+// 4
+
+combine('foo', 'bar')
+// foobar
+
+combine([1, 2, 3], [4, 5, 6])
+// [1, 2, 3, 4, 5, 6]
+
+combine({lorem: 'ipsum'}, {dolor: 'sit'})
+// {lorem: 'ipsum', dolor: 'sit'}
+
+combine({lorem: 'ipsum'})(null)
+// {lorem: 'ipsum'}
+
+combine('two', 2)
+// two
+
+combine(2, 'two')
+// 2
+
+combine([1, 2, 3], {lorem: 'ipsum'})
+// [1, 2, 3]
+
+combine({lorem: 'ipsum'}, [1, 2, 3])
+// {lorem: 'ipsum'}
+```
