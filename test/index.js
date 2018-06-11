@@ -2,11 +2,13 @@
 import test from 'tape'
 import {
     __,
+    always,
     concat,
     compose,
     evolve,
     map,
     head,
+    identity,
     is,
     join,
     length,
@@ -26,7 +28,7 @@ import {
     when
 } from 'ramda'
 
-import shape, {combine, mergeSpec, shapeStrictly, shapeLoosely, shapeline} from '../lib'
+import shape, {alwaysEvolve, combine, mergeSpec, shapeStrictly, shapeLoosely, shapeline} from '../lib'
     
 const spec = {
     hendrix: concat(__, 'mi'),
@@ -210,5 +212,13 @@ test('"mergeSpec" merges new props onto the original object', (t) => {
       },
       fullName: 'Montgomery Burns'
     })
+    t.end()
+})
+
+test('"alwaysEvolve" applies transform functions regardless if the prop exists in the input object', (t) => {
+    t.deepEqual(
+        alwaysEvolve({bo: identity, bag: always('gym')})({bo: 'jim'}),
+        {bo: 'jim', bag: 'gym'}
+    )
     t.end()
 })
