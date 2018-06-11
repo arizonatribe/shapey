@@ -220,5 +220,10 @@ test('"alwaysEvolve" applies transform functions regardless if the prop exists i
         alwaysEvolve({bo: identity, bag: always('gym')})({bo: 'jim'}),
         {bo: 'jim', bag: 'gym'}
     )
+    t.deepEqual(
+        alwaysEvolve({bo: identity, bag: always('gym')})(undefined),
+        {bo: undefined, bag: 'gym'},
+        'gracefully handles nil value'
+    )
     t.end()
 })
