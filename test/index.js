@@ -13,6 +13,7 @@ import {
     join,
     length,
     merge,
+    omit,
     pick,
     pipe,
     prop,
@@ -28,7 +29,7 @@ import {
     when
 } from 'ramda'
 
-import shape, {alwaysEvolve, combine, mergeSpec, shapeStrictly, shapeLoosely, shapeline} from '../lib'
+import shape, {alwaysEvolve, mapSpec, combine, mergeSpec, shapeStrictly, shapeLoosely, shapeline} from '../lib'
     
 const spec = {
     hendrix: concat(__, 'mi'),
@@ -168,6 +169,26 @@ test('"combine" will return the first value when the other value is a different 
     t.equal(combine(null, null), null, 'Null')
     t.equal(combine(undefined, null), undefined, 'undefined')
     t.equal(combine(null, undefined), null, 'undefined')
+    t.end()
+})
+
+test('"mapSpec" applys ONLY the spec shape specified to the input object', (t) => {
+    t.deepEqual(
+        mapSpec({
+            hendrix: pipe(prop('hendrix'), concat(__, 'mi')),
+            carter: pipe(prop('carter'), concat(__, 'my'))
+        }, inputObj),
+        omit(['morrison'], specResult),
+        'removes anything from the input object that was NOT in the spec'
+    )
+    t.deepEqual(
+        mapSpec({
+            kirk: 'james t.',
+            johns: pipe(prop('carter'), concat(__, 'my'))
+        }, inputObj),
+        {kirk: 'james t.', johns: 'jimmy'},
+        'non-function values are always returned, as-is'
+    )
     t.end()
 })
 
