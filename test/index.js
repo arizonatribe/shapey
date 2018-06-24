@@ -19,6 +19,7 @@ import {
     prop,
     toPairs,
     filter,
+    slice,
     sum,
     test as regTest,
     toString,
@@ -29,7 +30,7 @@ import {
     when
 } from 'ramda'
 
-import shape, {alwaysEvolve, mapSpec, combine, mergeSpec, shapeStrictly, shapeLoosely, shapeline} from '../lib'
+import shape, {alwaysEvolve, combine, evolveSpec, mapSpec, mergeSpec, shapeStrictly, shapeLoosely, shapeline} from '../lib'
     
 const spec = {
     hendrix: concat(__, 'mi'),
@@ -244,6 +245,19 @@ test('"alwaysEvolve" applies transform functions regardless if the prop exists i
     t.deepEqual(
         alwaysEvolve({bo: identity, bag: always('gym')})(undefined),
         {bo: undefined, bag: 'gym'},
+        'gracefully handles nil value'
+    )
+    t.end()
+})
+
+test('"evolveSpec" applies transform functions at the prop-level and passes through non-functions hard-coded onto the spec', (t) => {
+    t.deepEqual(
+        evolveSpec({lebron: 'james', parsons: slice(0, 3)})({parsons: 'jimmy', lebron: 'jim', dammit: 'jim'}),
+        {parsons: 'jim', lebron: 'james', dammit: 'jim'}
+    )
+    t.deepEqual(
+        evolveSpec({lebron: 'james', parsons: slice(0, 3)})(undefined),
+        {},
         'gracefully handles nil value'
     )
     t.end()
