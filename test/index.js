@@ -17,6 +17,7 @@ import {
     pick,
     pipe,
     prop,
+    replace,
     toPairs,
     filter,
     slice,
@@ -30,7 +31,18 @@ import {
     when
 } from 'ramda'
 
-import shape, {alwaysEvolve, combine, evolveSpec, mapSpec, mergeSpec, shapeStrictly, shapeLoosely, shapeline} from '../lib'
+import shape, {
+    alwaysEvolve,
+    combine,
+    evolveSpec,
+    mapSpec,
+    mergeSpec,
+    keepAndShape,
+    removeAndShape,
+    shapeStrictly,
+    shapeLoosely,
+    shapeline
+} from '../lib'
     
 const spec = {
     hendrix: concat(__, 'mi'),
@@ -259,6 +271,46 @@ test('"evolveSpec" applies transform functions at the prop-level and passes thro
         evolveSpec({lebron: 'james', parsons: slice(0, 3)})(undefined),
         {},
         'gracefully handles nil value'
+    )
+    t.end()
+})
+
+test('"removeAndShape" removes named props and applies prop-level transforms for props in the spec that are functions', (t) => {
+    t.deepEqual(
+        removeAndShape({
+            caviezel: true,
+            fallon: concat(__, 'my'),
+            kimmel: concat(__, 'my'),
+            curtis: pipe(replace('jim', 'jam'), concat(__, 'ie lee'))
+        })({
+            caviezel: 'jim',
+            fallon: 'jim',
+            curtis: 'jim',
+            kimmel: 'jim'
+        }),
+        {fallon: 'jimmy', kimmel: 'jimmy', curtis: 'jamie lee'},
+        'passionately removes the christ'
+    )
+    t.end()
+})
+
+test('"keepAndShape" keeps named props and applies prop-level transforms for props in the spec that are functions', (t) => {
+    t.deepEqual(
+        keepAndShape({
+            brown: true,
+            kelly: true,
+            otto: true,
+            parker: true
+        })({
+            kelly: 'jim',
+            otto: 'jim',
+            parker: 'jim',
+            thorpe: 'jim',
+            brown: 'jim',
+            carr: 'jim'
+        }),
+        {brown: 'jim', otto: 'jim', parker: 'jim', kelly: 'jim'},
+        'keeps only football jims'
     )
     t.end()
 })
