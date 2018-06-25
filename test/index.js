@@ -291,6 +291,21 @@ test('"removeAndShape" removes named props and applies prop-level transforms for
         {fallon: 'jimmy', kimmel: 'jimmy', curtis: 'jamie lee'},
         'passionately removes the christ'
     )
+    t.deepEqual(
+        removeAndShape({
+            caviezel: 'caviezel',
+            fallon: 'yup',
+            kimmel: null,
+            curtis: true
+        })({
+            caviezel: 'jim',
+            fallon: 'jim',
+            curtis: 'jim',
+            kimmel: 'jim'
+        }),
+        {fallon: 'jim', kimmel: 'jim'},
+        'only accepts props on the spec (in this mode) that are "true" or match the key'
+    )
     t.end()
 })
 
@@ -311,6 +326,24 @@ test('"keepAndShape" keeps named props and applies prop-level transforms for pro
         }),
         {brown: 'jim', otto: 'jim', parker: 'jim', kelly: 'jim'},
         'keeps only football jims'
+    )
+    t.deepEqual(
+        keepAndShape({
+            brown: 0,
+            kelly: null,
+            otto: undefined,
+            carr: true,
+            parker: 'parker'
+        })({
+            kelly: 'jim',
+            otto: 'jim',
+            parker: 'jim',
+            thorpe: 'jim',
+            brown: 'jim',
+            carr: 'jim'
+        }),
+        {carr: 'jim', parker: 'jim'},
+        'only accepts props on the spec (in this mode) that are "true" or match the key'
     )
     t.end()
 })
