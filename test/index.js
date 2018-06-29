@@ -116,44 +116,6 @@ test('"shape" can take a non-object as input', (t) => {
     t.end()
 })
 
-test('"shapeline" applies a list of functions (in sequence) to a single input', (t) => {
-    const numbers = [3, 4, 9, -3, 82, 274, 1334, 3, 13, 14, 47, 20]
-    const transforms = [
-        {sum, count: length},
-        s => (s.sum / (s.count || 1))
-    ]
-    t.deepEqual(shapeline(transforms, numbers), 150)
-    t.end()
-})
-
-test('"shapeline" is ideal for an array of specs to be turned into a shapey function pipeline', (t) => {
-    const numbers = [3, 4, 9, -3, 82, 274, 1334, 3, 13, 14, 47, 20]
-    const transforms = [{
-        numbers: nums => nums,
-        count: nums => nums.length,
-        sum: nums => nums.reduce((tot, num) => tot + num, 0)
-    }, {
-        type: 'AVERAGE',
-        average: s => s.sum / (s.count || 1)
-    }]
-    t.deepEqual(shapeline(transforms, numbers), {
-        type: 'AVERAGE',
-        numbers,
-        count: 12,
-        sum: 1800,
-        average: 150
-    })
-    t.deepEqual(
-        shapeline(
-            update(1, merge(transforms[1], {shapeyMode: 'strict'}))(transforms),
-            numbers
-        ),
-        {type: 'AVERAGE', average: 150},
-        'Optionally can use strict mode in the shapeline'
-    )
-    t.end()
-})
-
 test('"combine" will join, summarize, or merge two values together', (t) => {
     t.equal(combine(1, 2), 3, 'Numeric combination')
     t.equal(combine('foo', 'bar'), 'foobar', 'String combination')
@@ -344,6 +306,44 @@ test('"keepAndShape" keeps named props and applies prop-level transforms for pro
         }),
         {carr: 'jim', parker: 'jim'},
         'only accepts props on the spec (in this mode) that are "true" or match the key'
+    )
+    t.end()
+})
+
+test('"shapeline" applies a list of functions (in sequence) to a single input', (t) => {
+    const numbers = [3, 4, 9, -3, 82, 274, 1334, 3, 13, 14, 47, 20]
+    const transforms = [
+        {sum, count: length},
+        s => (s.sum / (s.count || 1))
+    ]
+    t.deepEqual(shapeline(transforms, numbers), 150)
+    t.end()
+})
+
+test('"shapeline" is ideal for an array of specs to be turned into a shapey function pipeline', (t) => {
+    const numbers = [3, 4, 9, -3, 82, 274, 1334, 3, 13, 14, 47, 20]
+    const transforms = [{
+        numbers: nums => nums,
+        count: nums => nums.length,
+        sum: nums => nums.reduce((tot, num) => tot + num, 0)
+    }, {
+        type: 'AVERAGE',
+        average: s => s.sum / (s.count || 1)
+    }]
+    t.deepEqual(shapeline(transforms, numbers), {
+        type: 'AVERAGE',
+        numbers,
+        count: 12,
+        sum: 1800,
+        average: 150
+    })
+    t.deepEqual(
+        shapeline(
+            update(1, merge(transforms[1], {shapeyMode: 'strict'}))(transforms),
+            numbers
+        ),
+        {type: 'AVERAGE', average: 150},
+        'Optionally can use strict mode in the shapeline'
     )
     t.end()
 })
