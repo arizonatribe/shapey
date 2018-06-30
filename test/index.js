@@ -2,6 +2,7 @@
 import test from 'tape'
 import {
     __,
+    add,
     always,
     concat,
     compose,
@@ -9,7 +10,9 @@ import {
     map,
     head,
     identity,
+    ifElse,
     is,
+    isNil,
     join,
     length,
     merge,
@@ -113,44 +116,6 @@ test('"shapeStrictly" creates a new object from only the fields in the spec', (t
 test('"shape" can take a non-object as input', (t) => {
     const numbers = [3, 4, 9, -3, 82, 274, 1334, 3, 13, 14, 47, 20]
     t.deepEqual(shapeLoosely({sum, count: length}, numbers), {sum: 1800, count: 12})
-    t.end()
-})
-
-test('"shapeline" applies a list of functions (in sequence) to a single input', (t) => {
-    const numbers = [3, 4, 9, -3, 82, 274, 1334, 3, 13, 14, 47, 20]
-    const transforms = [
-        {sum, count: length},
-        s => (s.sum / (s.count || 1))
-    ]
-    t.deepEqual(shapeline(transforms, numbers), 150)
-    t.end()
-})
-
-test('"shapeline" is ideal for an array of specs to be turned into a shapey function pipeline', (t) => {
-    const numbers = [3, 4, 9, -3, 82, 274, 1334, 3, 13, 14, 47, 20]
-    const transforms = [{
-        numbers: nums => nums,
-        count: nums => nums.length,
-        sum: nums => nums.reduce((tot, num) => tot + num, 0)
-    }, {
-        type: 'AVERAGE',
-        average: s => s.sum / (s.count || 1)
-    }]
-    t.deepEqual(shapeline(transforms, numbers), {
-        type: 'AVERAGE',
-        numbers,
-        count: 12,
-        sum: 1800,
-        average: 150
-    })
-    t.deepEqual(
-        shapeline(
-            update(1, merge(transforms[1], {shapeyMode: 'strict'}))(transforms),
-            numbers
-        ),
-        {type: 'AVERAGE', average: 150},
-        'Optionally can use strict mode in the shapeline'
-    )
     t.end()
 })
 
@@ -344,6 +309,158 @@ test('"keepAndShape" keeps named props and applies prop-level transforms for pro
         }),
         {carr: 'jim', parker: 'jim'},
         'only accepts props on the spec (in this mode) that are "true" or match the key'
+    )
+    t.end()
+})
+
+test('"shapeline" applies a list of functions (in sequence) to a single input', (t) => {
+    const numbers = [3, 4, 9, -3, 82, 274, 1334, 3, 13, 14, 47, 20]
+    const transforms = [
+        {sum, count: length},
+        s => (s.sum / (s.count || 1))
+    ]
+    t.deepEqual(shapeline(transforms, numbers), 150)
+    t.end()
+})
+
+test('"shapeline" is ideal for an array of specs to be turned into a shapey function pipeline', (t) => {
+    const numbers = [3, 4, 9, -3, 82, 274, 1334, 3, 13, 14, 47, 20]
+    const transforms = [{
+        numbers: nums => nums,
+        count: nums => nums.length,
+        sum: nums => nums.reduce((tot, num) => tot + num, 0)
+    }, {
+        type: 'AVERAGE',
+        average: s => s.sum / (s.count || 1)
+    }]
+    t.deepEqual(shapeline(transforms, numbers), {
+        type: 'AVERAGE',
+        numbers,
+        count: 12,
+        sum: 1800,
+        average: 150
+    })
+    t.deepEqual(
+        shapeline(
+            update(1, merge(transforms[1], {shapeyMode: 'strict'}))(transforms),
+            numbers
+        ),
+        {type: 'AVERAGE', average: 150},
+        'Optionally can use strict mode in the shapeline'
+    )
+    t.end()
+})
+
+test('"shape" allows you to control how the non-transform props are interpreted', (t) => {
+    t.deepEqual(
+        shape({
+            shapeyMode: 'remove',
+            duggar: true,
+            jones: true,
+            page: concat(__, 'my'),
+            buffet: concat(__, 'my'),
+            keenan: concat(__, 'my')
+        }, {
+            duggar: 'james',
+            jones: 'jim',
+            page: 'jim',
+            morrison: 'jim',
+            buffet: 'jim',
+            keenan: 'jim',
+            james: 'jim'
+        }), {
+            page: 'jimmy',
+            morrison: 'jim',
+            buffet: 'jimmy',
+            keenan: 'jimmy',
+            james: 'jim'
+        },
+        'removes evil fundamentalist jims'
+    )
+    t.deepEqual(
+        shape({
+            shapeyMode: 'keep',
+            broadbent: true,
+            mcmanus: true,
+            norton: true,
+            payton: true,
+            phelps: true,
+            tavare: true,
+            gardner: concat(__, 'my')
+        }, {
+            broadbent: 'jim',
+            carrey: 'jim',
+            carr: 'jim',
+            gaffigan: 'jim',
+            phelps: 'james',
+            payton: 'james',
+            mcmanus: 'jim',
+            norton: 'jim',
+            gardner: 'jim',
+            tavare: 'jim'
+        }), {
+            broadbent: 'jim',
+            phelps: 'james',
+            payton: 'james',
+            mcmanus: 'jim',
+            norton: 'jim',
+            gardner: 'jimmy',
+            tavare: 'jim'
+        },
+        'keeps only harry potter jims'
+    )
+    t.end()
+})
+test('"shape" also allows you to control how the transforms are applied', (t) => {
+    const propLevelSpec = {
+        shapeyTransforms: 'prop',
+        summarized: sum,
+        pass: ifElse(isNil, always(1), add(1))
+    }
+    t.deepEqual(
+        shape(propLevelSpec, {summarized: [13, 14, 19, 23, 38, 212, 331, 844, 2922, 9333]}),
+        {summarized: 13749, pass: 1}
+    )
+    t.deepEqual(
+        shape(propLevelSpec, {pass: 1, summarized: [13749, 23, 3857]}),
+        {summarized: 17629, pass: 2}
+    )
+    const wholeTransformsSpec = {
+        shapeyTransforms: 'whole',
+        jimmy: compose(map(concat(__, 'my')), pick(['carter', 'fallon', 'kimmel', 'page', 'buffet'])),
+        jim: pick(['kirk', 'parsons', 'henson', 'thorpe', 'buffet'])
+    }
+    t.deepEqual(
+        shape(wholeTransformsSpec, {
+            parsons: 'jim',
+            kirk: 'jim',
+            kimmel: 'jim',
+            fallon: 'jim',
+            carter: 'jim',
+            morrison: 'jim',
+            buffet: 'jim',
+            page: 'jim',
+            henson: 'jim',
+            thorpe: 'jim',
+            curtis: 'jim',
+            dean: 'jim',
+            jimmy: 'john'
+        }), {
+            jim: {
+                kirk: 'jim',
+                parsons: 'jim',
+                henson: 'jim',
+                thorpe: 'jim',
+                buffet: 'jim'
+            },
+            jimmy: {
+                carter: 'jimmy',
+                fallon: 'jimmy',
+                kimmel: 'jimmy',
+                page: 'jimmy',
+                buffet: 'jimmy'
+            }
+        }
     )
     t.end()
 })
