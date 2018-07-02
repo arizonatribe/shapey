@@ -167,6 +167,62 @@ test('"mapSpec" applys ONLY the spec shape specified to the input object', (t) =
         {kirk: 'james t.', johns: 'jimmy'},
         'non-function values are always returned, as-is'
     )
+    t.deepEqual(
+        mapSpec({
+            presidents: {
+                foundingFather: jims =>
+                    Object.entries(jims.presidents)
+                        .filter(([lastName]) => lastName === 'madison')
+                        .map(([lastName, firstName]) => `${firstName.replace('i', 'a')}es ${lastName}`)[0],
+                peanutFarmer: jims =>
+                    Object.entries(jims.presidents)
+                        .filter(([lastName]) => lastName === 'carter')
+                        .map(([lastName, firstName]) => `${firstName}my ${lastName}`)[0]
+            },
+            stars: {
+                starTrek: jims =>
+                    Object.entries(jims.stars)
+                        .filter(([lastName]) => lastName === 'kirk')
+                        .map(([lastName]) => `james t. ${lastName}`)[0],
+                starWars: jims =>
+                    Object.entries(jims.stars)
+                        .filter(([lastName]) => lastName === 'jones')
+                        .map(([lastName]) => `james earl ${lastName}`)[0]
+            }
+        }, {
+            presidents: {
+                carter: 'jim',
+                harrison: 'jim',
+                madison: 'jim',
+                monroe: 'jim',
+                mckinley: 'jim'
+            },
+            football: {
+                kelly: 'jim',
+                otto: 'jim',
+                parker: 'jim',
+                thorpe: 'jim',
+                brown: 'jim',
+                carr: 'jim'
+            },
+            stars: {
+                kirk: 'jim',
+                jones: 'jim',
+                carrey: 'jim',
+                stewart: 'jim'
+            }
+        }), {
+            presidents: {
+                foundingFather: 'james madison',
+                peanutFarmer: 'jimmy carter'
+            },
+            stars: {
+                starTrek: 'james t. kirk',
+                starWars: 'james earl jones'
+            }
+        },
+        'is able to recursively re-shape'
+    )
     t.end()
 })
 
@@ -216,8 +272,22 @@ test('"mergeSpec" merges new props onto the original object', (t) => {
 
 test('"alwaysEvolve" applies transform functions regardless if the prop exists in the input object', (t) => {
     t.deepEqual(
-        alwaysEvolve({bo: identity, bag: always('gym')})({bo: 'jim'}),
+        alwaysEvolve({bag: when(isNil, always('gym'))})({bo: 'jim'}),
         {bo: 'jim', bag: 'gym'}
+    )
+    t.deepEqual(
+        alwaysEvolve({brown: 'james'}, {
+            beam: 'jim',
+            belushi: 'jim',
+            brown: 'jim',
+            bowie: 'jim'
+        }), {
+            beam: 'jim',
+            belushi: 'jim',
+            brown: 'james',
+            bowie: 'jim'
+        },
+        'always B jim'
     )
     t.deepEqual(
         alwaysEvolve({bo: identity, bag: always('gym')})(undefined),
@@ -231,6 +301,30 @@ test('"evolveSpec" applies transform functions at the prop-level and passes thro
     t.deepEqual(
         evolveSpec({lebron: 'james', parsons: slice(0, 3)})({parsons: 'jimmy', lebron: 'jim', dammit: 'jim'}),
         {parsons: 'jim', lebron: 'james', dammit: 'jim'}
+    )
+    t.deepEqual(
+        evolveSpec({
+            carrey: 'jim',
+            stewart: 'jimmy',
+            jones: concat(__, ' earl')
+        }, {
+            arness: 'james',
+            cagney: 'james',
+            dean: 'james',
+            jones: 'james',
+            garner: 'james',
+            mason: 'james',
+            stewart: 'james'
+        }), {
+            arness: 'james',
+            cagney: 'james',
+            dean: 'james',
+            jones: 'james earl',
+            garner: 'james',
+            mason: 'james',
+            stewart: 'jimmy'
+        },
+        'classic jims'
     )
     t.deepEqual(
         evolveSpec({lebron: 'james', parsons: slice(0, 3)})(undefined),

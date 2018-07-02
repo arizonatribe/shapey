@@ -8,13 +8,25 @@ A light, intuitve syntax for re-shaping objects in JavaScript, inspired by [Ramd
 npm install --save shapey
 ```
 
-### Default Usage
+## The Basics of Shapey
 
-In its default mode, shapey will "loosely" shape an input object. This means the spec shape you provide will _merge_ over the input object.
+The simplest way to think of what Shapey does is it allows you to define how to re-shape an object in JavaScript by writing all of those re-shaping changes _as an object_.
+
+So rather than a glut of `if`, `else if`, `else` statements, or a long "fluently" chained functions, instead you can define the way you want your object transformed as an object of (mostly) functions. This kind of "object" is referred to in this library (an in other libraries as well) as a __spec__. Shapey will take that object of functions and hard-coded values and turn it into a function that applies those re-shaping operations to the input object you later supply to it.
+
+The reason for a library like this is you often find yourself trying to apply these re-shaping functions via a fluent API of chained functions or maybe a bunch of `if`/`else` blocks, and the more deep you get into these transform operations the harder it becomes to _visualize_ the final output of your output.  The alternative style being proposed with Shapey (as well as its inspiration from a couple of the spec-related functions in [Ramda](http://ramdajs.com)) is to describe your desired output as an object whose keys (may) match prop names on the input you want to re-shape. But the values you set in your "spec" can be functions (or even hard-coded values, when appropriate). When the input is passed into the function created by your Shapey spec, all the props on your input are passed through all the transform functions you defined.
+
+Now you don't _have_ to define functions in your spec that match props in your input object. That is the other side of the coin - when working with Shapey specs - if you define a function in your spec that _doesn't_ correspond to a single prop in your input object, Shapey will assume you want that transform function to create a new prop that is derived from existing props in the input object.
+
+In its default mode, Shapey will apply all the transform operations defined in your spec to the input object, merging those changes into the final output. The additional way that Shapey behaves by default is to match prop names in your spec to prop names in your input object. If you defined a prop in your spec that _doesn't_ exist in your input object (by default) Shapey will create that as a new prop. You may be wondering what it will supply to your transform function if there isn't a matching prop in your input object, but it's quite simple: the entire input object is supplied to your transform function if there isn't a matching prop name on the input object.
 
 Additionally, any transform functions you supply as values to the "spec" will be applied to any props of the same name on the input object you supply later. If the name of one or more your transform functions on the spec doesn't match a prop on the input object, shapey will automatically pass the _entire_ input object into that transform function(s).
 
-You can control the automatic behavior of the way transform functions and non-transform props on your spec are handled via the [shapeyMode](#remove-vs-keep-vs-strict-modes) and [shapeyTransforms](#prop-vs-whole-object-transforms) magically reserved props.
+Again, that is the _default_ behavior and you can alter that by a couple of "magic props" that will signal to Shapey that you want it to behave differently. These are defined in detail later in the docs (the props are [shapeyMode](#remove-vs-keep-vs-strict-modes) and [shapeyTransforms](#prop-vs-whole-object-transforms), and you can jump to the [full description](#shapey-transform-functions-and-shapey-modes) if you want). If - for some strange reason - you have props of those names on your input object . . . don't.
+
+### A Basic Example
+
+Using the default exported function from Shapey:
 
 ```javascript
 import shape from 'shapey'
@@ -30,11 +42,15 @@ const jimmify = shape({
     hendrix: jim => jim + 'mi',
     carter: jim => jim + 'my',
     dean: 'james',
-    world: jim => jim + 'my' + 'eat',
+    world: jim => jim + 'my ' + 'eat',
     jims(allJims) {
+        // Break up the whole input object into key-val pairs,
+        // and concatenate into a single comma-separated string
         return Object.entries(allJims).reduce(
             (jimSurnames, [lastName, firstName]) => (
-                !/^jim/.test(firstName || '') ? jimSurnames : [jimSurnames, lastName].filter(Boolean).join(', ')
+                !/^jim/.test(firstName) ?
+                    jimSurnames :
+                    [jimSurnames, lastName].filter(Boolean).join(', ')
             ), '')
     }
 })
@@ -61,6 +77,7 @@ To clarify what is happening in that code example:
 * Since a prop like `dean` DOESN'T exist on the original object (but is specified on the spec), its corresponding `compose()` function is passed the _entire_ input object (rather than just a single prop from the original input object).
 * Any prop (such as `jims`) which is _not_ a function has its value passed through onto the finished result (no operation is performed on the input object for a prop like this).
 
+## Shapey Transform Functions and Shapey Modes
 
 ### Strict Shaping
 
@@ -122,49 +139,52 @@ As implied in those descriptions of "remove" and "keep" modes, you can still app
 
 ### Prop vs Whole object transforms
 
-Shapey applies the logic (mentioned previously) that transform functions will be
-applied to a matching prop on your input object _unless_ that prop does not
-exist, in which case the whole input object will be supplied to your prop. What
-this allows you to do is create new props that can be derived from existing
-ones.
+Shapey applies the logic (mentioned previously) that transform functions will be applied to a matching prop on your input object _unless_ that prop does not exist, in which case the whole input object will be supplied to your prop. What this allows you to do is create new props that can be derived from existing ones.
 
 Since this mode isn't always what you want to do, you can change it easily by using the magic "shapeyTransforms" reserved prop in your spec. You can set it to "prop" to always apply prop-level transforms (even if there isn't a matching prop on the input object - keep in mind that means your transform function will receive an input of `undefined`, so write accordingly). Conversely, setting a value of "whole" will always pass the whole input object into your transform functions.
 
-### Shapeline
+## Full Index of Shapey Functions
 
-There is another way to use shaping functions and it is to create a pipeline of them. In this approach you create a list of input functions to be executed in order, transforming the input value and sending that new value as input to the next shaping function.
+Keep in mind that you can (and probably always should) just use the default exported function of Shapey. These functions are all used in that default function and controlled by the reserved `shapeyMode` and `shapeyTransforms` props. However, it might be useful to grab those inner pieces and use them in one-off scenarios as part of your chain of curried, composed functions. Those of you already familiar with the [Ramda](http://ramdajs.com/docs) library are likely using its functions in that manner, so it might make more sense for you to use Shapey in that way, which is why the following functions are provided as named exports:
 
-```
-import {shapeline} from 'shapey'
+* [shapeline](#shapeline)
+* [alwaysEvolve](#alwaysevolve)
+* [combine](#combine)
+* [evolveSpec](#evolvespec)
+* [mapSpec](#mapspec)
+* [mergeSpec](#mergespec)
+* [keepAndShape](#keepandshape)
+* [removeAndShape](#removeandshape)
+* [shapeByProp](#shapebyprop)
+* [shapeLoosely](#shapeyloosely)
+* [shapeStrictly](#shapeystrictly)
+* [shapeWhole](#shapewhole)
 
-const numbers = [3, 4, 9, -3, 82, 274, 1334, 3, 13, 14, 47, 20]
-const transforms = [{
-    numbers: nums => nums,
-    count: nums => nums.length,
-    sum: nums => nums.reduce((tot, num) => tot + num, 0)
-}, {
-    type: 'AVERAGE',
-    average: ({sum, count}) => sum / (count || 1)
-}]
+### alwaysEvolve
 
-shapeline(transforms)(numbers)
+A port of [Ramda's evolve()](http://ramdajs.com/docs/#evolve), but the transforms are _always_ applied regardless if the key/value pair exists in the input object or not. This means if a prop defined in your spec _doesn't_ exist in the input object, a value of `undefined` will be provided to that prop transform function (so write your transform functions in the spec accordingly).
+
+The reason for a function like this is when you don't have a lot of control over whether your input object is empty or in an upredictable shape (ie, receiving raw data from an API). In those cases, you probably don't want to have the entire input object fed into your prop-level transform function.
+
+```javascript
+const jameSomeJims = alwaysEvolve({brown: 'james'})
+
+jameSomeJims({
+    beam: 'jim',
+    belushi: 'jim',
+    bowie: 'jim',
+    brown: 'jim'
+})
 
 // {
-// type: 'AVERAGE',
-// numbers: [3, 4, 9, -3, 82, 274, 1334, 3, 13, 14, 47, 20],
-// count: 12,
-// sum: 1800,
-// average: 150
+//   beam: 'jim',
+//   belushi: 'jim',
+//   brown: 'james',
+//   bowie: 'jim'
 // }
 ```
 
-The list of transform functions to provide can be shapey spec objects or just plain functions that take a value and return a new one. Any shapey spec objec in that list will be turned into a shaping function prior to starting the pipeline.
-
-#### Strict Shaping in the Shapeline
-
-Although the default behvior - when one of the specs in the transforms list is a spec (object) - is to make a `shapeLoosely()` function, you can specify a different shaping mode by setting a prop on the spec called `shapeyMode` to a value of "strict" (case insensitive). This is per spec, and if there are ever any new modes besides "loose" and "strict", this prop will be how you control which to use.
-
-### Combine
+### combine
 
 A simple curried util function that combines two values of the same type (when it makes sense to combine them)
 
@@ -174,7 +194,7 @@ A simple curried util function that combines two values of the same type (when i
 
 When the two values are _not_ of the same type (or not among those rules mentioned above), just the first values is returned instead of attempting to combine anything.
 
-```
+```javascript
 import {combine} from 'shapey'
 
 combine(1, 3)
@@ -204,3 +224,158 @@ combine([1, 2, 3], {lorem: 'ipsum'})
 combine({lorem: 'ipsum'}, [1, 2, 3])
 // {lorem: 'ipsum'}
 ```
+
+### evolveSpec
+
+Another port of [Ramda's evolve()](http://ramdajs.com/docs/#evolve), but it also supports non-function values in the spec. As with Ramda's `evolve()`, the values in your spec will _only_ be applied if those props _also_ exist in your input object (use [alwaysEvolve()](#alwaysevolve) if you want to always apply props regardless if they exist in the input object).
+
+```javascript
+const jimsWhoAct = evolveSpec({
+    carr: 'jim', 
+    carrey: 'jim', 
+    stewart: 'jimmy',
+    jones: jim => jim + ' earl'
+})
+
+const classicJames = {
+    arness: 'james',
+    cagney: 'james',
+    dean: 'james',
+    jones: 'james',
+    garner: 'james',
+    mason: 'james',
+    stewart: 'james'
+}
+
+jimsWhoAct(classicJames)
+
+// {
+//   arness: 'james',
+//   cagney: 'james',
+//   dean: 'james',
+//   jones: 'james earl',
+//   garner: 'james',
+//   mason: 'james',
+//   stewart: 'jimmy'
+// }
+```
+
+### mapSpec
+
+A port over of [Ramda's applySpec()](http://ramdajs.com/docs/#applySpec), but it is made so that you can pass in both arguments together (rather than thunk style). As with `applySpec()`, non functions are accepted as values for you spec and it supports recursive mapping. Note that - unlike with the evolve functions - _every_ transform function takes the _entire_ input object as input. An additional change was made to this port-over of `applySpec()` (as with the port-overs of `evolve()`) to wrap every transform in a try/catch.
+
+Using `applySpec()` in the wild and at-scale proved to be one of the hardest Ramda functions to debug. While it may not sound necessary to catch errors and log the prop name that failed, I found it important for easing the learning phase for developers who are new to (and on the fence about) functional programming. Since the error tracing was so challenging for myself and a group of developers I collaborated with, it lead to this feature implementation.
+
+This next example demonstrates the recursive nature of the spec mapping (again note that only the fields named in your spec will be present on the output):
+
+```javascript
+const starsAndPresidents = mapSpec({
+  presidents: {
+    foundingFather: jims =>
+      Object.entries(jims.presidents)
+        .filter(([lastName]) => lastName === 'madison')
+        .map(([lastName]) => `james ${lastName}`)[0],
+
+    peanutFarmer: jims =>
+      Object.entries(jims.presidents)
+        .filter(([lastName]) => lastName === 'carter')
+        .map(([lastName, firstName]) => `${firstName}my ${lastName}`)[0]
+  },
+  stars: {
+    starTrek: jims =>
+      Object.entries(jims.stars)
+        .filter(([lastName]) => lastName === 'kirk')
+        .map(([lastName]) => `james t. ${lastName}`)[0],
+
+    starWars: jims =>
+      Object.entries(jims.stars)
+        .filter(([lastName]) => lastName === 'jones')
+        .map(([lastName]) => `james earl ${lastName}`)[0]
+  }
+})
+
+const assortmentOfJims = {
+    presidents: {
+        carter: 'jim',
+        harrison: 'jim',
+        madison: 'jim',
+        monroe: 'jim',
+        mckinley: 'jim'
+    },
+    football: {
+        kelly: 'jim',
+        otto: 'jim',
+        parker: 'jim',
+        thorpe: 'jim',
+        brown: 'jim',
+        carr: 'jim'
+    },
+    stars: {
+        kirk: 'jim',
+        jones: 'jim',
+        carrey: 'jim',
+        stewart: 'jim'
+    }
+}
+
+starsAndPresidents(assortmentOfJims)
+
+// {
+//   presidents: {
+//     foundingFather: 'james madison',
+//     peanutFarmer: 'jimmy carter'
+//   },
+//   stars: {
+//     starTrek: 'james t. kirk',
+//     starWars: 'james earl jones'
+//   }
+// }
+```
+
+### mergeSpec
+
+### keepAndShape
+
+### removeAndShape
+
+### shapeByProp
+
+### shapeLoosely
+
+### shapeStrictly
+
+### shapeWhole
+
+### shapeline
+
+There is another way to use shaping functions and it is to create a pipeline of them. In this approach you create a list of input functions to be executed in order, transforming the input value and sending that new value as input to the next shaping function.
+
+```javascript
+import {shapeline} from 'shapey'
+
+const numbers = [3, 4, 9, -3, 82, 274, 1334, 3, 13, 14, 47, 20]
+const transforms = [{
+    numbers: nums => nums,
+    count: nums => nums.length,
+    sum: nums => nums.reduce((tot, num) => tot + num, 0)
+}, {
+    type: 'AVERAGE',
+    average: ({sum, count}) => sum / (count || 1)
+}]
+
+shapeline(transforms)(numbers)
+
+// {
+// type: 'AVERAGE',
+// numbers: [3, 4, 9, -3, 82, 274, 1334, 3, 13, 14, 47, 20],
+// count: 12,
+// sum: 1800,
+// average: 150
+// }
+```
+
+The list of transform functions to provide can be shapey spec objects or just plain functions that take a value and return a new one. Any shapey spec objec in that list will be turned into a shaping function prior to starting the pipeline.
+
+#### Strict Shaping in the Shapeline
+
+Although the default behvior - when one of the specs in the transforms list is a spec (object) - is to make a `shapeLoosely()` function, you can specify a different shaping mode by setting a prop on the spec called `shapeyMode` to a value of "strict" (case insensitive). This is per spec, and if there are ever any new modes besides "loose" and "strict", this prop will be how you control which to use.
