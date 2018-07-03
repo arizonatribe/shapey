@@ -155,10 +155,8 @@ Keep in mind that you can (and probably always should) just use the default expo
 * [mergeSpec](#mergespec)
 * [keepAndShape](#keepandshape)
 * [removeAndShape](#removeandshape)
-* [shapeByProp](#shapebyprop)
 * [shapeLoosely](#shapeyloosely)
 * [shapeStrictly](#shapeystrictly)
-* [shapeWhole](#shapewhole)
 
 ### alwaysEvolve
 
@@ -334,17 +332,128 @@ starsAndPresidents(assortmentOfJims)
 
 ### mergeSpec
 
+Another function that bears resemblance to  [Ramda's applySpec()](http://ramdajs.com/docs/#applySpec), however it merges the transformed data onto the input, rather than returning only the result of the props defined in the spec.
+
+```javascript
+const egggCellent = mergeSpec({
+  fullName: compose(join(' '), values, pick(['firstName', 'lastName'])),
+  address: pipe(prop('address'), evolve({
+    street: trim,
+    city: compose(str => str.replace(/(?:^|\s)\S/g, toUpper), trim),
+    state: toUpper,
+    zip: compose(trim, when(is(Number), toString))
+  }))
+})
+
+egggCellent({
+  firstName: 'Montgomery',
+  lastName: 'Burns',
+  address: {
+    street: '1000 Mammon Lane, ',
+    city: 'springfield',
+    state: 'or',
+    zip: 97403
+  }
+})
+
+// {
+//   firstName: 'Montgomery',
+//   lastName: 'Burns',
+//   address: {
+//     street: '1000 Mammon Lane,',
+//     city: 'Springfield',
+//     state: 'OR',
+//     zip: '97403'
+//   },
+//   fullName: 'Montgomery Burns'
+// }
+```
+
 ### keepAndShape
+
+This function allows you to define a spec of prop-level transforms _and_ to implicitly remove _all_ props that are not in your spec. Sure, you could do this with [shapeStrictly](#shapestrictly) or even [mapSpec](#mapspec), but it would be a bit clunky with a bunch of identity functions to define props you want to keep but not transform on the final output. In cases like that it would be easier to just set a value of `true` for every prop that you want to keep but _not_ transform. Essentially your spec would look something like this:
+
+```javascript
+const makeBaseUserModel = keepAndShape({
+    id: true,
+    name: capitalize,
+    email: true,
+    roles: true
+})
+
+makeBaseUserModel({
+    id: 13453235234,
+    name: 'jim doe',
+    email: 'jim.doe@email.com',
+    roles: ['user', 'admin'],
+    dateCreated: '2009-11-05',
+    lastLogin: '2018-07-01',
+    profile: '/users/images/13453235234',
+    address: {
+        street: '101 N. Main St.',
+        city: 'Phoenix',
+        state: 'AZ',
+        zip: 85018
+    }
+})
+
+// {
+//  id: 13453235234,
+//  name: 'Jim Doe',
+//  email: 'jim.doe@email.com',
+//  roles: ['user', 'admin'],
+// }
+```
+
+Nothing too magical going on with `keepAndShape()`, just name the props you want to keep (either by setting a value of `true` or by specifiying a transform function) and everything else will be omitted.
+
+In addition to setting a value of `true` (for props you want to keep), this function will also accept a value that is identical to the key, so something like this would have also worked in that example above:
+
+```javascript
+keepAndShape({
+    id: 'id',
+    name: capitalize,
+    email: 'email',
+    roles: 'roles'
+})
+```
 
 ### removeAndShape
 
-### shapeByProp
+This function allows you to define a spec of prop-level transforms _and_ to explicitly remove _all_ props that are named in your spec (except for the props in your spec that you are transform functions, of course). This functionality is the opposite of [keepAndShape](#keepandshape) - the only difference being the non-transform props you name in your spec are removed, wherease in `keepAndShape()` the props you name are the _only_ ones kept. The case for using one of these functions over the other is driven by the size of your input object and the number of props you want to remove or to keep. The goal is to reduce the amount of typing you have to perform, so sometimes it's easier to specify a couple props you want to shave off, while sometimes it's easier to name a limited number of props (on a larger input object) that you want to keep.
+
+```javascript
+const safeForClientSide = removeAndShape({
+    refresh_token: true
+})
+
+safeForClientSide({
+    access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkppbSBEb2UiLCJpYXQiOjE1MTYyMzkwMjJ9.xc9_QqQfs5peNl96HVoJ8R-G-QT1G5e2v7ct6_BcwfE',
+    expires_in: 60,
+    refresh_token: '2eivjoiavoiwe239fja09312s093', 
+    name: 'Jim Doe',
+    email: 'jim.doe@email.com'
+})
+
+// {
+//  access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkppbSBEb2UiLCJpYXQiOjE1MTYyMzkwMjJ9.xc9_QqQfs5peNl96HVoJ8R-G-QT1G5e2v7ct6_BcwfE',
+//  expires_in: 60,
+//  name: 'Jim Doe',
+//  email: 'jim.doe@email.com'
+// }
+```
+
+In addition to setting a value of `true` (for props you want to remove), this function will also accept a value that is identical to the key, so something like this would have also worked in that example above:
+
+```javascript
+removeAndShape({
+    refresh_token: 'refresh_token'
+})
+```
 
 ### shapeLoosely
 
-### shapeStrictly
-
-### shapeWhole
+With this function transforms are applied at the prop-level if a transform matches the name of a prop on the input, and if not, the _whole_ object is fed into the transform function.
 
 ### shapeline
 
