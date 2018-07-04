@@ -12,7 +12,50 @@ npm install --save shapey
 
 The simplest way to think of what Shapey does is it allows you to define how to re-shape an object in JavaScript by writing all of those re-shaping changes _as an object_.
 
-So rather than a glut of `if`, `else if`, `else` statements, or a long "fluently" chained functions, instead you can define the way you want your object transformed as an object of (mostly) functions. This kind of "object" is referred to in this library (an in other libraries as well) as a __spec__. Shapey will take that object of functions and hard-coded values and turn it into a function that applies those re-shaping operations to the input object you later supply to it.
+So rather than a glut of `if`, `else if`, `else` statements, or a long chain of functions, instead you can define the way you want your object transformed as an object of (mostly) functions. This kind of "object" is referred to in this library (an in other libraries as well) as a __spec__. Shapey will take that object of functions and hard-coded values and turn it into a function that applies those re-shaping operations to the input object you later supply to it.
+
+```javascript
+import shape from 'shapey'
+
+// You can import simple tranform functions like these from another file
+const yayNay = val => val ? 'Yes' : 'No'
+const blankIfNil = val => val == null ? '' val
+const trim = str => (str || '').replace(/^\s+|\s+$/, '')
+const ensureArray = val => Array.isArray(val) ? val : (val ? [val] : [])
+const capitalize = str => (str || '').replace(/(?:^|\s)\S/g, s => s.toUpperCase())
+const itsADate = str => (str && typeof str === 'string') ? new Date(str) : new Date()
+
+// Then set them as the values on your spec
+const formatUser = shape({
+  name: capitalize,
+  description: trim,
+  isAdmin: yayNay,
+  aliases: ensureArray,
+  roles: ensureArray,
+  lastLogin: itsADate
+})
+
+// Finally, apply your spec function to an input object to transform it accordingly
+formatUser({
+  id: 13234366,
+  name: 'james',
+  description: 'Lives to work and works to live!  ',
+  email: 'james.doe@email.com',
+  aliases: null,
+  roles: ['admin', 'dev', 'user'],
+  lastLogin: null
+})
+
+// {
+//  id: 13234366,
+//  name: 'James',
+//  description: 'Lives to work and works to live!',
+//  email: 'james.doe@email.com',
+//  aliases: [],
+//  roles: ['admin', 'dev', 'user'],
+//  lastLogin: '2018-07-04T05:49:53.674Z'
+// }
+```
 
 The reason for a library like this is you often find yourself trying to apply these re-shaping functions via a fluent API of chained functions or maybe a bunch of `if`/`else` blocks, and the more deep you get into these transform operations the harder it becomes to _visualize_ the final output of your output.  The alternative style being proposed with Shapey (as well as its inspiration from a couple of the spec-related functions in [Ramda](http://ramdajs.com)) is to describe your desired output as an object whose keys (may) match prop names on the input you want to re-shape. But the values you set in your "spec" can be functions (or even hard-coded values, when appropriate). When the input is passed into the function created by your Shapey spec, all the props on your input are passed through all the transform functions you defined.
 
@@ -20,7 +63,7 @@ Now you don't _have_ to define functions in your spec that match props in your i
 
 In its default mode, Shapey will apply all the transform operations defined in your spec to the input object, merging those changes into the final output. The additional way that Shapey behaves by default is to match prop names in your spec to prop names in your input object. If you defined a prop in your spec that _doesn't_ exist in your input object (by default) Shapey will create that as a new prop. You may be wondering what it will supply to your transform function if there isn't a matching prop in your input object, but it's quite simple: the entire input object is supplied to your transform function if there isn't a matching prop name on the input object.
 
-Additionally, any transform functions you supply as values to the "spec" will be applied to any props of the same name on the input object you supply later. If the name of one or more your transform functions on the spec doesn't match a prop on the input object, shapey will automatically pass the _entire_ input object into that transform function(s).
+Any transform functions you supply as values to the "spec" will be applied to any props of the same name on the input object you supply later. If the name of one or more your transform functions on the spec doesn't match a prop on the input object, shapey will automatically pass the _entire_ input object into that transform function(s).
 
 Again, that is the _default_ behavior and you can alter that by a couple of "magic props" that will signal to Shapey that you want it to behave differently. These are defined in detail later in the docs (the props are [shapeyMode](#remove-vs-keep-vs-strict-modes) and [shapeyTransforms](#prop-vs-whole-object-transforms), and you can jump to the [full description](#shapey-transform-functions-and-shapey-modes) if you want). If - for some strange reason - you have props of those names on your input object . . . don't.
 
