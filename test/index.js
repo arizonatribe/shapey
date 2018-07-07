@@ -595,6 +595,40 @@ test('Errors thrown on an individual transform are caught', (t) => {
   t.end()
 })
 
+test('Transforms that fail can even be skipped, entirely', (t) => {
+  t.deepEqual(
+    mapSpec({shapeyDebug: 'skip', james: split('|')})({james: 23}),
+    {james: {james: 23}},
+    'output of failed mapSpec() transforms is undefined'
+  )
+  t.deepEqual(
+    mergeSpec({shapeyDebug: 'skip', james: split('|')})({james: null}),
+    {james: {james: null}},
+    'output of failed mergeSpec() transforms is undefined'
+  )
+  t.deepEqual(
+    evolveSpec({shapeyDebug: 'skip', james: split('|')})({james: 23}),
+    {james: 23},
+    'output of failed evolveSpec() transforms is undefined'
+  )
+  t.deepEqual(
+    alwaysEvolve({shapeyDebug: 'skip', james: split('|')})({james: 23}),
+    {james: 23},
+    'output of failed alwaysEvolve() transforms is undefined'
+  )
+  t.deepEqual(
+    shapeLoosely({shapeyDebug: 'skip', james: split('|')})({james: true}),
+    {james: true},
+    'output of failed shapeLoosely() transforms is undefined'
+  )
+  t.deepEqual(
+    shapeStrictly({shapeyDebug: 'skip', james: split('|')})({james: true}),
+    {james: true},
+    'output of failed shapeStrictly() transforms is undefined'
+  )
+  t.end()
+})
+
 test('Custom Error logger can be passed in as "shapeyDebug" prop', (t) => {
   /**
      * Note: this doesn't make any sense to use a custom error handler to set
