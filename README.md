@@ -67,6 +67,8 @@ Any transform functions you supply as values to the "spec" will be applied to an
 
 Again, that is the _default_ behavior and you can alter that by a couple of "magic props" that will signal to Shapey that you want it to behave differently. These are defined in detail later in the docs (the props are [shapeyMode](#remove-vs-keep-vs-strict-modes) and [shapeyTransforms](#prop-vs-whole-object-transforms), and you can jump to the [full description](#shapey-transform-functions-and-shapey-modes) if you want). If - for some strange reason - you have props of those names on your input object . . . don't.
 
+Additionally, there is magic prop called [shapeyDebug](#debugging-transforms) that allows you to catch errors for individual transform functions that fail. 
+
 ### A Basic Example
 
 Using the default exported function from Shapey:
@@ -185,6 +187,12 @@ As implied in those descriptions of "remove" and "keep" modes, you can still app
 Shapey applies the logic (mentioned previously) that transform functions will be applied to a matching prop on your input object _unless_ that prop does not exist, in which case the whole input object will be supplied to your prop. What this allows you to do is create new props that can be derived from existing ones.
 
 Since this mode isn't always what you want to do, you can change it easily by using the magic "shapeyTransforms" reserved prop in your spec. You can set it to "prop" to always apply prop-level transforms (even if there isn't a matching prop on the input object - keep in mind that means your transform function will receive an input of `undefined`, so write accordingly). Conversely, setting a value of "whole" will always pass the whole input object into your transform functions.
+
+### Debugging Transforms
+
+Executing a bunch of transform functions can be challenging to debug. If one fails, should the whole spec fail too? And how do you tell which one actually failed (among many)? Unfortunately there isn't a perfect answer, however you can provide you own error handler via the `shapeyDebug` magic prop, and Shapey will pass it the exception and the field name, for easier debugging. This means you can leave this prop unset except during troubleshooting sessions OR you can provide an error handling function that's always okay to use (even in production). Also, you can just set `shapeyDebug: true` if you just want to use `console.error` to handle exceptions (it will also log the field name along with the actual exception).
+
+All errors thrown on an individual spec transform function will be caught. Unless you provided a custom handler that returns something else, the value for all failed transforms will be set to `undefined`. This is a tradeoff based on real-world scaling challenges with similar functions like [Ramda's applySpec()](http://ramdajs.com/docs/#applySpec) being used in the Redux `mapStateToProps()` (quite challenging to debug when one selector fails). Frameworks, programming languages, and (sometimes) helper utils are opinionated, and on this topic (catching errors for failed transforms) Shapey is no exception. . . .
 
 ## Full Index of Shapey Functions
 

@@ -24,6 +24,7 @@ import {
     toPairs,
     filter,
     slice,
+    split,
     sum,
     test as regTest,
     toString,
@@ -505,6 +506,7 @@ test('"shape" allows you to control how the non-transform props are interpreted'
     )
     t.end()
 })
+
 test('"shape" also allows you to control how the transforms are applied', (t) => {
     const propLevelSpec = {
         shapeyTransforms: 'prop',
@@ -558,3 +560,80 @@ test('"shape" also allows you to control how the transforms are applied', (t) =>
     )
     t.end()
 })
+
+test('Errors thrown on an individual transform are caught', (t) => {
+    t.deepEqual(
+        mapSpec({james: split('|')})({james: null}),
+        {james: undefined},
+        'output of failed mapSpec() transforms is undefined'
+    )
+    t.deepEqual(
+        mergeSpec({james: split('|')})({james: null}),
+        {james: undefined},
+        'output of failed mergeSpec() transforms is undefined'
+    )
+    t.deepEqual(
+        evolveSpec({james: split('|')})({james: null}),
+        {james: undefined},
+        'output of failed evolveSpec() transforms is undefined'
+    )
+    t.deepEqual(
+        alwaysEvolve({james: split('|')})({james: null}),
+        {james: undefined},
+        'output of failed alwaysEvolve() transforms is undefined'
+    )
+    t.deepEqual(
+        shapeLoosely({james: split('|')})({james: null}),
+        {james: undefined},
+        'output of failed shapeLoosely() transforms is undefined'
+    )
+    t.deepEqual(
+        shapeStrictly({james: split('|')})({james: null}),
+        {james: undefined},
+        'output of failed shapeStrictly() transforms is undefined'
+    )
+    t.end()
+})
+
+test('Custom Error logger can be passed in as "shapeyDebug" prop', (t) => {
+    /**
+     * Note: this doesn't make any sense to use a custom error handler to set
+     * the failed transform prop to the actual exception message - so please
+     * don't take this as an example of what to use it for.
+     * It's merely a way to verify via unit tests that the custom handler works
+     */
+    const oddHandler = ex => String(ex)
+
+    t.deepEqual(
+        mapSpec({shapeyDebug: oddHandler, james: split('|')})({james: null}),
+        {james: 'TypeError: {"james": null} does not have a method named "split"'},
+        'mapSpec() can use a custom error handler'
+    )
+    t.deepEqual(
+        mergeSpec({shapeyDebug: oddHandler, james: split('|')})({james: null}),
+        {james: 'TypeError: {"james": null} does not have a method named "split"'},
+        'mergeSpec() can use a custom error handler'
+    )
+    t.deepEqual(
+        evolveSpec({shapeyDebug: oddHandler, james: split('|')})({james: null}),
+        {james: 'TypeError: null does not have a method named "split"'},
+        'evolveSpec() can use a custom error handler'
+    )
+    t.deepEqual(
+        alwaysEvolve({shapeyDebug: oddHandler, james: split('|')})({james: null}),
+        {james: 'TypeError: null does not have a method named "split"'},
+        'alwaysEvolve() can use a custom error handler'
+    )
+    t.deepEqual(
+        shapeLoosely({shapeyDebug: oddHandler, james: split('|')})({james: null}),
+        {james: 'TypeError: null does not have a method named "split"'},
+        'shapeLoosely() can use a custom error handler'
+    )
+    t.deepEqual(
+        shapeStrictly({shapeyDebug: oddHandler, james: split('|')})({james: null}),
+        {james: 'TypeError: null does not have a method named "split"'},
+        'shapeStrictly() can use a custom error handler'
+    )
+    t.end()
+})
+
