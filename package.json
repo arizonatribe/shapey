@@ -1,6 +1,6 @@
 {
   "name": "shapey",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "A simple syntax for remapping objects, inspired by several of Ramda's spec based functions",
   "main": "cjs/index.js",
   "module": "es/index.js",

@@ -12,7 +12,7 @@ const config = {
 }
 
 if (env === 'es' || env === 'cjs') {
-  config.output = {format: env, indent: false}
+  config.output = {format: env, indent: false, exports: 'named'}
   config.external = ['ramda']
   config.plugins.push(
     babel({
@@ -22,7 +22,7 @@ if (env === 'es' || env === 'cjs') {
 }
 
 if (env === 'development' || env === 'production') {
-  config.output = {format: 'umd', name: 'shapey', indent: false}
+  config.output = {format: 'umd', name: 'shapey', indent: false, exports: 'named'}
   config.plugins.push(
     commonjs({include: 'node_modules/ramda/**'}),
     babel({
