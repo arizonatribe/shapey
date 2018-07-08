@@ -194,6 +194,31 @@ Executing a bunch of transform functions can be challenging to debug. If one fai
 
 All errors thrown on an individual spec transform function will be caught. Unless you provided a custom handler that returns something else, the value for all failed transforms will be set to `undefined`. This is a tradeoff based on real-world scaling challenges with similar functions like [Ramda's applySpec()](http://ramdajs.com/docs/#applySpec) being used in the Redux `mapStateToProps()` (quite challenging to debug when one selector fails). Frameworks, programming languages, and (sometimes) helper utils are opinionated, and on this topic (catching errors for failed transforms) Shapey is no exception. . . .
 
+Options for `shapeyDebug`:
+
+* `true` - Uses `console.error` to log the transform function (field) that failed, the value that was passed into it, and the actual exception that was caught
+* "skip" - Will ignore any transform functions that cause an exception and the original value will be left intact
+* `Function` - Your own error handling function, which will receive the following parameters (in this order):
+    - The exception that was caught
+    - The field name for the transform that failed
+    - The value that was fed into the transform function that failed
+
+If you write a custom handler, you can of course, return any value you wish. A common use might be to return the original value, but log the exception, for example something like this:
+
+```javascript
+
+const myCustomHandler = (err, field, value) => {
+  /* log the exception itself, and a friendly message */
+  someRemoteErrorLoggingFunction(err, `Transform failed on ${field} for value: ${value}`)
+  
+  /* returns the original value, since the transform failed */
+  return value
+}
+
+```
+
+Unless you have an idea in mind for your own custom handler, it's recommended that you _don't_ set `shapeyDebug` unless you're actually trying to debug some code that is failing. But if you don't set `shapeyDebug`, keep in mind that although the exception gets caught, nothing is done with it and `undefined` is returned for the transformed prop.
+
 ## Full Index of Shapey Functions
 
 Keep in mind that you can (and probably always should) just use the default exported function of Shapey. These functions are all used in that default function and controlled by the reserved `shapeyMode` and `shapeyTransforms` props. However, it might be useful to grab those inner pieces and use them in one-off scenarios as part of your chain of curried, composed functions. Those of you already familiar with the [Ramda](http://ramdajs.com/docs) library are likely using its functions in that manner, so it might make more sense for you to use Shapey in that way, which is why the following functions are provided as named exports:
