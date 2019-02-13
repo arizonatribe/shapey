@@ -2,6 +2,7 @@
 .npmrc
 *.log
 **/node_modules
-/dist/
-/es/
-/cjs/
+build/
+docs/
+coverage/
+.nyc_output/

@@ -1,4 +1,11 @@
-node_modules/
 .env
-.npmrc
-*.log
+.eslintrc
+.travis.yml
+assets/
+docs/
+test/
+coverage/
+jsdoc.json
+nodemon.json
+rollup.config.js
+BENCHMARKS.md

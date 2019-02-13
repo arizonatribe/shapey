@@ -1,49 +1,38 @@
-import commonjs from 'rollup-plugin-commonjs'
-import nodeResolve from 'rollup-plugin-node-resolve'
-import babel from 'rollup-plugin-babel'
-import replace from 'rollup-plugin-replace'
-import uglify from 'rollup-plugin-uglify'
-import {minify} from 'uglify-es'
+const babel = require('rollup-plugin-babel')
+const nodeResolve = require('rollup-plugin-node-resolve')
+const replace = require('rollup-plugin-replace')
+const {terser} = require('rollup-plugin-terser')
 
 const env = process.env.NODE_ENV
+
 const config = {
   input: 'lib/index.js',
-  plugins: [nodeResolve({jsnext: true})]
-}
-
-if (env === 'es' || env === 'cjs') {
-  config.output = {format: env, indent: false, exports: 'named'}
-  config.external = ['ramda']
-  config.plugins.push(
-    babel({
-      plugins: ['external-helpers']
-    })
-  )
-}
-
-if (env === 'development' || env === 'production') {
-  config.output = {format: 'umd', name: 'shapey', indent: false, exports: 'named'}
-  config.plugins.push(
-    commonjs({include: 'node_modules/ramda/**'}),
-    babel({
-      exclude: 'node_modules/**',
-      plugins: ['external-helpers']
-    }),
+  output: {
+    name: 'shapey',
+    exports: 'named',
+    indent: false,
+    file: 'build/dist/shapey.js',
+    format: 'umd'
+  },
+  plugins: [
+    nodeResolve({jsnext: true}),
+    babel({exclude: 'node_modules/**'}),
     replace({'process.env.NODE_ENV': JSON.stringify(env)})
-  )
+  ]
 }
 
 if (env === 'production') {
+  config.output.file = 'build/dist/shapey.min.js'
   config.plugins.push(
-    uglify({
+    terser({
       compress: {
         pure_getters: true,
         unsafe: true,
         unsafe_comps: true,
         warnings: false
       }
-    }, minify)
+    })
   )
 }
 
-export default config
+module.exports = config

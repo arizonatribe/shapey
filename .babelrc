@@ -1,32 +1,29 @@
 {
   "presets": [
-    [
-      "env",
-      {
-        "targets": {
-          "browsers": [
-            "ie >= 11"
-          ]
-        },
-        "exclude": ["transform-async-to-generator", "transform-regenerator"],
-        "modules": false,
-        "loose": true
+    ["@babel/preset-env", {
+      "loose": true,
+      "targets": {
+        "browsers": ["last 2 versions"]
       }
-    ]
+    }]
   ],
   "plugins": [
-    "ramda",
-    "transform-object-rest-spread"
+    "@babel/proposal-object-rest-spread"
   ],
   "env": {
-    "commonjs": {
+    "cjs": {
+      "plugins": [
+        "@babel/proposal-object-rest-spread",
+        "add-module-exports"
+      ]
+    },
+    "umd": {
       "presets": [
-        [
-          "env",
-          {
-            "loose": true
+        ["@babel/preset-env", {
+          "targets": {
+            browsers: ['ie >= 11']
           }
-        ]
+        }]
       ]
     }
   }

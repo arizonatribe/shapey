@@ -47,7 +47,7 @@ import shape, {
   shapeLoosely,
   shapeline
 } from '../lib'
-    
+
 const spec = {
   hendrix: concat(__, 'mi'),
   carter: concat(__, 'my'),
@@ -670,4 +670,3 @@ test('Custom Error logger can be passed in as "shapeyDebug" prop', (t) => {
   )
   t.end()
 })
-
