@@ -1,0 +1,264 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Source: shape.js | shapey</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/bootstrap.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/prettify-jsdoc.css">
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/tui-doc.css">
+
+    
+        
+            <link type="text/css" rel="stylesheet" href="styles/after.css">
+        
+    
+</head>
+<body>
+<nav class="lnb" id="lnb">
+    <div class="logo" style="width: 1px; height: 1px">
+        
+            <a href="https://github.com/arizonatribe/shapey" rel="noopener noreferrer" target="_blank">
+                <img src="https://arizonatribe.github.io/shapey/styles/logo.png" width="100%" height="100%">
+            </a>
+        
+    </div>
+    <div class="title">
+        <h1><a href="index.html" class="link">shapey</a></h1>
+        
+            <span class="version">v1.2.4</span>
+        
+    </div>
+    <div class="search-container" id="search-container">
+        <input type="text" placeholder="Search">
+        <ul></ul>
+    </div>
+    
+    <div class="lnb-api hidden"><h3>Global</h3><ul><li><a href="global.html#alwaysEvolve">alwaysEvolve</a></li><li><a href="global.html#alwaysFunction">alwaysFunction</a></li><li><a href="global.html#applyNonTransformProps">applyNonTransformProps</a></li><li><a href="global.html#applyWholeObjectTransforms">applyWholeObjectTransforms</a></li><li><a href="global.html#defaultErrorHandler">defaultErrorHandler</a></li><li><a href="global.html#evolveSpec">evolveSpec</a></li><li><a href="global.html#impliedRemove">impliedRemove</a></li><li><a href="global.html#isPlainObj">isPlainObj</a></li><li><a href="global.html#keepAndShape">keepAndShape</a></li><li><a href="global.html#keeper">keeper</a></li><li><a href="global.html#makeFunctionUnlessObject">makeFunctionUnlessObject</a></li><li><a href="global.html#makePruningSpec">makePruningSpec</a></li><li><a href="global.html#makeShaper">makeShaper</a></li><li><a href="global.html#objectify">objectify</a></li><li><a href="global.html#onlySpecTransforms">onlySpecTransforms</a></li><li><a href="global.html#removeAndShape">removeAndShape</a></li><li><a href="global.html#removeMagicProps">removeMagicProps</a></li><li><a href="global.html#remover">remover</a></li><li><a href="global.html#safeSpecTransforms">safeSpecTransforms</a></li><li><a href="global.html#shapeline">shapeline</a></li><li><a href="global.html#shapeLoosely">shapeLoosely</a></li><li><a href="global.html#shapeStrictly">shapeStrictly</a></li><li><a href="global.html#wrapperForTheirErrorHandler">wrapperForTheirErrorHandler</a></li></ul></div>
+</nav>
+<div id="resizer"></div>
+
+<div class="main" id="main">
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>import {
+  always,
+  applyTo,
+  both,
+  compose,
+  cond,
+  converge,
+  curry,
+  difference,
+  filter,
+  keys,
+  identity,
+  is,
+  isEmpty,
+  map,
+  merge,
+  omit,
+  pathSatisfies,
+  pick,
+  pipe,
+  reduce,
+  test as regTest,
+  T,
+  when
+} from 'ramda'
+import {remover, keeper, impliedRemove} from './prune'
+import {onlySpecTransforms, isPlainObj, applyNonTransformProps} from './util'
+import alwaysEvolve from './alwaysEvolve'
+import evolveSpec from './evolveSpec'
+import mapSpec from './mapSpec'
+
+
+/**
+ * Applies transform functions in a given spec to a given object, BUT only the
+ * trasnforms that DON'T match key names on the input object are applied.
+ *
+ * @func
+ * @sig {k: v} -> {k: v} -> {k: v}
+ * @param {Object} spec An object which contains transform functions (only those which do not correspond to keys on the input object will be applied to the input object)
+ * @param {Object} input An object which will be passed through the re-shaping transform functions defined by the spec
+ * @returns {Object} The input object with the spec transforms applied to it
+ * (only those that do not correspond to key names on the input object)
+ */
+export const applyWholeObjectTransforms = curry((spec, value) =>
+  compose(
+    mapSpec,
+    applyTo(spec),
+    pick,
+    difference(keys(filter(is(Function), spec))),
+    keys
+  )(value)
+)
+
+const baseShaper = curry((evolver, spec, value) =>
+  pipe(
+    applyNonTransformProps(spec),
+    evolver(onlySpecTransforms(spec)),
+    converge(merge, [
+      identity,
+      converge(applyTo, [
+        when(isEmpty, always(value)),
+        applyWholeObjectTransforms(spec)
+      ])
+    ])
+  )(value)
+)
+
+/**
+ * This function allows one to blend an object with a clone that is taken
+ * through prop transformations. Unlike object mappers/transformers, not every
+ * value in the spec need be a function. Non-function values are simply added to
+ * the result. If a given value in the spec IS a function however, it will be
+ * used to transform OR to create a prop. If the prop specified on the spec
+ * exists on the value (object) being mapped, a prop-level transform will be
+ * perform (just like [Ramda's evolve()](http://ramdajs.com/docs/#evolve)).
+ * But if a prop in the spec doesn't exist in the object and if that prop is a
+ * transformer function, then the transformer will be used to create that prop
+ * on the resulting object BUT the entire object will be passed into the
+ * transform function (just like [Ramda's applySpec()](http://ramdajs.com/docs/#applySpec), rather than just a single prop.
+ *
+ * @func
+ * @sig {k: v} -> {k: v} -> {k: v}
+ * @param {Object} spec An object whose values are either transform functions or pass-through values to be added to the return object
+ * @param {Object} input An object which will be passed through the re-shaping transform functions defined by the spec
+ * @returns {Object} The input object with the spec transforms applied to it
+ */
+export const shapeLoosely = baseShaper(evolveSpec)
+
+/**
+ * Applies a shaping spec to an input object, but will NOT pass through any props unless they are named in the spec.
+ * In other words, you're providing it template for creating a brand new object from some raw input.
+ *
+ * @func
+ * @sig {k: v} -> {k: v} -> {k: v}
+ * @param {Object} spec An object whose values are either transform functions or pass-through values to be added to the return object
+ * @param {Object} input An object which will be passed through the re-shaping transform functions defined by the spec
+ * @returns {Object} The input object with the spec transforms applied to it
+ */
+export const shapeStrictly = curry((spec, input) => compose(pick(keys(spec)), shapeLoosely(spec))(input))
+
+const pruneOutput = curry(
+  (spec, input) =>
+    when(
+      isPlainObj,
+      cond([
+        [is(Function), identity],
+        [both(isPlainObj, pathSatisfies(regTest(/remove/i), ['shapeyMode'])), remover],
+        [both(isPlainObj, pathSatisfies(regTest(/keep/i), ['shapeyMode'])), keeper],
+        [both(isPlainObj, pathSatisfies(regTest(/strict/i), ['shapeyMode'])),
+          sp => pipe(impliedRemove(sp), applyNonTransformProps(sp))],
+        [isPlainObj, applyNonTransformProps],
+        [T, always]
+      ])(spec)
+    )(input)
+)
+
+const applyTransforms = curry(
+  (spec, input) => cond([
+    [is(Function), identity],
+    [both(isPlainObj, pathSatisfies(regTest(/prop/i), ['shapeyTransforms'])),
+      pipe(onlySpecTransforms, alwaysEvolve)],
+    [both(isPlainObj, pathSatisfies(regTest(/whole/i), ['shapeyTransforms'])),
+      pipe(onlySpecTransforms, mapSpec)],
+    [isPlainObj, pipe(onlySpecTransforms, shapeLoosely)],
+    [T, always]
+  ])(spec)(input)
+)
+
+/**
+ * A single function that selects and applies one of the available re-shaping functions in the shapey library,
+ * depending on what you've set the `shapeyMode` prop to in the `spec` you provide as the first argument to this function.
+ *
+ * Think of it like a case statement in a Redux reducer, however since you most likely _don't_ want to sacrifice
+ * the meanining associated with the "type" property to internals of shapey, a prop called "shapeyMode" is used instead.
+ *
+ * If for some reason you have some prop on the input (the object you're transforming) already named "shapeyMode", um . . . don't.
+ *
+ * Available modes (case &amp; space in-sensitive):
+ *   "strict" - uses `shapeStrictly`, where _only_ the props named in your spec are included in the output
+ *   "keep" - uses `keepAndShape`, where all the props you name in your spec are kept.
+ *   "remove" - uses `removeAndShape`, where all the props you name in your spec are removed.
+ *
+ * In addition to controlling the mode for Shapey, you can control how the transforms are applied.
+ * This is controlled via the reserved prop in your spec called "shapeyTransforms", and the available options for it are:
+ *   "prop" - All transforms are applied at the prop-level, regardless if they exist on the input object
+ *   "whole" - All transforms are given the _entire_ input object as input
+ *   (regardless if a prop matching the name of the transform exists on the input object)
+ *
+ * @func
+ * @sig {k: v} -> {k: v} -> {k: v}
+ * @param {Object} spec An object whose values are either transform functions or pass-through values to be added to the return object
+ * @param {Object} input An object which will be passed through the re-shaping transform functions defined by the spec
+ * @returns {Object} The input object with the spec transforms applied to it
+ */
+const makeShaper = curry((spec, input) => pipe(
+  applyTransforms(spec),
+  pruneOutput(spec),
+  when(isPlainObj, omit(['shapeyTransforms', 'shapeyMode']))
+)(input))
+
+/**
+ * Applies a list of functions (in sequence) to a single input, passing
+ * the transformed output as the input value to the next function in the chain.
+ * If a spec object is included in the transforms, the shaper that corresponds
+ * to the "shapeyMode" prop is invoked (otherwise `shapeLoosely()` is used).
+ * This creates a transform function for the pipeline.
+ *
+ * @func
+ * @sig [a -> b, b -> c, c -> d, ...] -> * -> *
+ * @param {Function[]} transforms A list of transform functions
+ * @param {*} input The input value to pass through the enhancer pipeline
+ * @returns {*} The output of the original input passed through the chain of transform functions
+ */
+export const shapeline = curry((transforms, input) =>
+  reduce((inputObj, fn) => fn(inputObj), input, map(makeShaper, transforms || []))
+)
+
+export default makeShaper
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<footer>
+    <img class="logo" src="https://arizonatribe.github.io/shapey/styles/logo.png" style="width: 1px; height: 1px">
+    <div class="footer-text">A simple syntax for remapping objects, inspired by several of Ramda's spec based functions</div>
+</footer>
+<script>prettyPrint();</script>
+<script src="scripts/jquery.min.js"></script>
+<script src="scripts/tui-doc.js"></script>
+<script src="scripts/linenumber.js"></script>
+
+    <script>
+        var id = '_sub'.replace(/"/g, '_');
+        var selectedApi = document.getElementById(id); // do not use jquery selector
+        var $selectedApi = $(selectedApi);
+
+        $selectedApi.removeClass('hidden');
+        $selectedApi.parent().find('.glyphicon').removeClass('glyphicon-plus').addClass('glyphicon-minus');
+        showLnbApi();
+    </script>
+
+</body>
+</html>

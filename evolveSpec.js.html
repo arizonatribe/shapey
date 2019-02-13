@@ -1,0 +1,124 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Source: evolveSpec.js | shapey</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/bootstrap.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/prettify-jsdoc.css">
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/tui-doc.css">
+
+    
+        
+            <link type="text/css" rel="stylesheet" href="styles/after.css">
+        
+    
+</head>
+<body>
+<nav class="lnb" id="lnb">
+    <div class="logo" style="width: 1px; height: 1px">
+        
+            <a href="https://github.com/arizonatribe/shapey" rel="noopener noreferrer" target="_blank">
+                <img src="https://arizonatribe.github.io/shapey/styles/logo.png" width="100%" height="100%">
+            </a>
+        
+    </div>
+    <div class="title">
+        <h1><a href="index.html" class="link">shapey</a></h1>
+        
+            <span class="version">v1.2.4</span>
+        
+    </div>
+    <div class="search-container" id="search-container">
+        <input type="text" placeholder="Search">
+        <ul></ul>
+    </div>
+    
+    <div class="lnb-api hidden"><h3>Global</h3><ul><li><a href="global.html#alwaysEvolve">alwaysEvolve</a></li><li><a href="global.html#alwaysFunction">alwaysFunction</a></li><li><a href="global.html#applyNonTransformProps">applyNonTransformProps</a></li><li><a href="global.html#applyWholeObjectTransforms">applyWholeObjectTransforms</a></li><li><a href="global.html#defaultErrorHandler">defaultErrorHandler</a></li><li><a href="global.html#evolveSpec">evolveSpec</a></li><li><a href="global.html#impliedRemove">impliedRemove</a></li><li><a href="global.html#isPlainObj">isPlainObj</a></li><li><a href="global.html#keepAndShape">keepAndShape</a></li><li><a href="global.html#keeper">keeper</a></li><li><a href="global.html#makeFunctionUnlessObject">makeFunctionUnlessObject</a></li><li><a href="global.html#makePruningSpec">makePruningSpec</a></li><li><a href="global.html#makeShaper">makeShaper</a></li><li><a href="global.html#objectify">objectify</a></li><li><a href="global.html#onlySpecTransforms">onlySpecTransforms</a></li><li><a href="global.html#removeAndShape">removeAndShape</a></li><li><a href="global.html#removeMagicProps">removeMagicProps</a></li><li><a href="global.html#remover">remover</a></li><li><a href="global.html#safeSpecTransforms">safeSpecTransforms</a></li><li><a href="global.html#shapeline">shapeline</a></li><li><a href="global.html#shapeLoosely">shapeLoosely</a></li><li><a href="global.html#shapeStrictly">shapeStrictly</a></li><li><a href="global.html#wrapperForTheirErrorHandler">wrapperForTheirErrorHandler</a></li></ul></div>
+</nav>
+<div id="resizer"></div>
+
+<div class="main" id="main">
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>import {__, applyTo, cond, curry, has, is, keys, T} from 'ramda'
+import {safeSpecTransforms, isPlainObj, objectify} from './util'
+
+/**
+ * A port of [Ramda's evolve()](http://ramdajs.com/docs/#evolve), but any
+ * primitive value or array in the transform spec is wrapped in a function that
+ * always returns that value. Any functions already on the transform spec are
+ * applied at the prop-level (like evolve() always does) and any objects on the
+ * transform spec call the evolver recursively (again, normal behavior for
+ * evolve()).
+ * In other words, the only difference between this and Ramda's
+ * evolve() function is that primitives and array vales are wrapped in an
+ * always() function before the spec is fed to evolve() rather than being
+ * omitted from the final output.
+ *
+ * @func
+ * @sig {k: (a -> b)} -> {k: v} -> {k: v}
+ * @param {Object} transforms An object with transform functions or nested transform
+ * functions or primitive vales to be wrapped with a function.
+ * @param {Object} input The input object to pass through prop-level transformations
+ * @returns {Object} The modified input object, with any prop-level transforms
+ * applied to it
+ */
+const evolveSpec = curry((transforms, input) => {
+  const result = {}
+  const spec = safeSpecTransforms(transforms)
+  const object = objectify(input)
+  keys(object).forEach(key => {
+    result[key] = cond([
+      [is(Function), applyTo(object[key])],
+      [isPlainObj, evolveSpec(__, object[key])],
+      [T, val => (has(key, spec) ? val : object[key])]
+    ])(spec[key])
+  })
+  return result
+})
+
+export default evolveSpec
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<footer>
+    <img class="logo" src="https://arizonatribe.github.io/shapey/styles/logo.png" style="width: 1px; height: 1px">
+    <div class="footer-text">A simple syntax for remapping objects, inspired by several of Ramda's spec based functions</div>
+</footer>
+<script>prettyPrint();</script>
+<script src="scripts/jquery.min.js"></script>
+<script src="scripts/tui-doc.js"></script>
+<script src="scripts/linenumber.js"></script>
+
+    <script>
+        var id = '_sub'.replace(/"/g, '_');
+        var selectedApi = document.getElementById(id); // do not use jquery selector
+        var $selectedApi = $(selectedApi);
+
+        $selectedApi.removeClass('hidden');
+        $selectedApi.parent().find('.glyphicon').removeClass('glyphicon-plus').addClass('glyphicon-minus');
+        showLnbApi();
+    </script>
+
+</body>
+</html>
