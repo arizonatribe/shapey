@@ -1,6 +1,6 @@
 {
   "name": "shapey",
-  "version": "1.2.5",
+  "version": "1.2.6",
   "description": "A simple syntax for remapping objects, inspired by several of Ramda's spec based functions",
   "main": "cjs/index.js",
   "module": "es/index.js",
@@ -43,7 +43,7 @@
   "license": "Apache-2.0",
   "author": "David Nunez <arizonatribe@gmail.com>",
   "dependencies": {
-    "ramda": "0.26.1"
+    "vanillas": "^1.0.17"
   },
   "devDependencies": {
     "@babel/cli": "7.0.0",
@@ -69,6 +69,7 @@
     "glob": "7.1.1",
     "jsdoc": "3.5.5",
     "nodemon": "1.18.10",
+    "ramda": "0.26.1",
     "rimraf": "2.6.3",
     "rollup": "^1.10.1",
     "rollup-plugin-babel": "^4.3.2",

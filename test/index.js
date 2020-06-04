@@ -562,35 +562,29 @@ test('"shape" also allows you to control how the transforms are applied', (t) =>
 })
 
 test('Errors thrown on an individual transform are caught', (t) => {
-  t.deepEqual(
-    mapSpec({james: split('|')})({james: null}),
-    {james: undefined},
-    'output of failed mapSpec() transforms is undefined'
+  t.doesNotThrow(
+    () => mapSpec({james: split('|')})({james: null}),
+    'output of failed mapSpec() does not throw'
   )
-  t.deepEqual(
-    mergeSpec({james: split('|')})({james: null}),
-    {james: undefined},
-    'output of failed mergeSpec() transforms is undefined'
+  t.doesNotThrow(
+    () => mergeSpec({james: split('|')})({james: null}),
+    'output of failed mergeSpec() does not throw'
   )
-  t.deepEqual(
-    evolveSpec({james: split('|')})({james: null}),
-    {james: undefined},
-    'output of failed evolveSpec() transforms is undefined'
+  t.doesNotThrow(
+    () => evolveSpec({james: split('|')})({james: null}),
+    'output of failed evolveSpec() does not throw'
   )
-  t.deepEqual(
-    alwaysEvolve({james: split('|')})({james: null}),
-    {james: undefined},
-    'output of failed alwaysEvolve() transforms is undefined'
+  t.doesNotThrow(
+    () => alwaysEvolve({james: split('|')})({james: null}),
+    'output of failed alwaysEvolve() does not throw'
   )
-  t.deepEqual(
-    shapeLoosely({james: split('|')})({james: null}),
-    {james: undefined},
-    'output of failed shapeLoosely() transforms is undefined'
+  t.doesNotThrow(
+    () => shapeLoosely({james: split('|')})({james: null}),
+    'output of failed shapeLoosely() does not throw'
   )
-  t.deepEqual(
-    shapeStrictly({james: split('|')})({james: null}),
-    {james: undefined},
-    'output of failed shapeStrictly() transforms is undefined'
+  t.doesNotThrow(
+    () => shapeStrictly({james: split('|')})({james: null}),
+    'output of failed shapeStrictly() does not throw'
   )
   t.end()
 })
