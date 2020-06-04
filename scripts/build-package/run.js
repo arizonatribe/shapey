@@ -1,14 +1,25 @@
 #!/usr/bin/env node
 
+const path = require('path')
 const chalk = require('chalk')
 const fse = require('fs-extra')
 const spawn = require('cross-spawn')
-const resolvePaths = require('./paths')
 const createConfig = require('./config')
+
+const resolvePath = rel => path.resolve(__dirname, '../..', rel)
 
 function run() {
   try {
-    const paths = resolvePaths()
+    const paths = {
+      build: resolvePath('build'),
+      README: resolvePath('README.md'),
+      faucet: resolvePath('node_modules/.bin/faucet'),
+      pkgPath: resolvePath('build/package.json'),
+      babel: resolvePath('node_modules/.bin/babel'),
+      eslint: resolvePath('node_modules/.bin/eslint'),
+      rollup: resolvePath('node_modules/.bin/rollup'),
+      tape: resolvePath('node_modules/.bin/tape')
+    }
     const { pkg, commands } = createConfig(paths)
 
     fse.emptyDirSync(paths.build)

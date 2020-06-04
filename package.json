@@ -1,13 +1,14 @@
 {
   "name": "shapey",
-  "version": "1.2.7",
+  "version": "1.2.8",
   "description": "A simple syntax for remapping objects, inspired by several of Ramda's spec based functions",
-  "main": "cjs/index.js",
-  "module": "es/index.js",
+  "main": "lib/index.js",
+  "private": true,
   "watch": {
     "docs": "{assets,src}/*"
   },
   "scripts": {
+    "predist": "npm run prepare",
     "dist": "npm publish build",
     "docs": "jsdoc --configure jsdoc.json",
     "docs:server": "live-server --open=docs --watch=assets,docs --port=5000",
@@ -57,7 +58,6 @@
     "@babel/register": "7.0.0",
     "@babel/runtime": "7.0.0",
     "babel-eslint": "10.0.1",
-    "babel-plugin-ramda": "1.4.3",
     "babel-plugin-add-module-exports": "1.0.0",
     "chalk": "2.4.1",
     "cross-env": "5.1.0",
