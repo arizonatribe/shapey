@@ -1,6 +1,6 @@
 {
   "name": "shapey",
-  "version": "1.2.6",
+  "version": "1.2.7",
   "description": "A simple syntax for remapping objects, inspired by several of Ramda's spec based functions",
   "main": "cjs/index.js",
   "module": "es/index.js",
@@ -8,6 +8,7 @@
     "docs": "{assets,src}/*"
   },
   "scripts": {
+    "dist": "npm publish build",
     "docs": "jsdoc --configure jsdoc.json",
     "docs:server": "live-server --open=docs --watch=assets,docs --port=5000",
     "start": "npm run test:watch",
