@@ -23,6 +23,10 @@ function createConfig(paths = {}, env = process.env) {
     args: ['--require=@babel/register', 'test/index.js', ` | ${paths.faucet}`],
     context: { stdio: 'inherit', env, shell: true }
   }, {
+    command: paths.copy,
+    args: [paths.types, paths.build],
+    context: { stdio: 'inherit', env }
+  }, {
     command: paths.babel,
     args: ['lib', '--out-dir', 'build'],
     context: { stdio: 'inherit', env: { ...env, BABEL_ENV: 'cjs' } }

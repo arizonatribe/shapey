@@ -12,9 +12,11 @@ function run() {
   try {
     const paths = {
       build: resolvePath('build'),
+      copy: resolvePath('node_modules/.bin/cpy'),
       README: resolvePath('README.md'),
       faucet: resolvePath('node_modules/.bin/faucet'),
       pkgPath: resolvePath('build/package.json'),
+      types: resolvePath('types.d.ts'),
       babel: resolvePath('node_modules/.bin/babel'),
       eslint: resolvePath('node_modules/.bin/eslint'),
       rollup: resolvePath('node_modules/.bin/rollup'),
