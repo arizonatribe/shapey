@@ -1,5 +1,13 @@
 # Shapey
 
+<img
+  src="https://raw.githubusercontent.com/arizonatribe/shapey/master/assets/styles/logo.png"
+  alt="Shapey JS"
+  width="250"
+  height="162"
+  align="right"
+/>
+
 A light, intuitve syntax for re-shaping objects in JavaScript, inspired by [Ramda's](http://ramdajs.com) [evolve](http://ramdajs.com/docs/#evolve) and [applySpec](http://ramdajs.com/docs/#applySpec).
 
 ## Installation
